@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Comprobante de Reserva - Brumas de Mazamitla</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#003366" />
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5;
+    padding: 30px;
+  }
+  form {
+    background: white;
+    padding: 30px 35px;
+    border-radius: 10px;
+    max-width: 480px;
+    margin: 0 auto;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+  h2 {
+    text-align: center;
+    color: #003366;
+    margin-bottom: 22px;
+    font-weight: 700;
+  }
+  label {
+    display: block;
+    margin-top: 18px;
+    color: #222;
+    font-weight: 600;
+  }
+  input, select, button, textarea {
+    width: 100%;
+    padding: 12px 14px;
+    margin-top: 6px;
+    border-radius: 8px;
+    border: 1.8px solid #bbb;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+    resize: vertical;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: #003366;
+    outline: none;
+  }
+  button {
+    margin-top: 30px;
+    background-color: #003366;
+    color: white;
+    font-weight: 700;
+    font-size: 18px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 5px 14px #002244bb;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background-color: #002244;
+  }
+</style>
+</head>
+<body>
+
+<form id="reservaForm">
+  <h2>Formulario de Reserva</h2>
+
+  <label for="logoFile">Subir Logotipo (PNG o JPG)</label>
+  <input type="file" id="logoFile" accept="image/png, image/jpeg" />
+
+  <label for="nombre">Nombre del Cliente</label>
+  <input type="text" id="nombre" required />
+
+  <label for="acompanantes">Nombre de Acompañante(s)</label>
+  <input type="text" id="acompanantes" placeholder="Ejemplo: Juan Pérez, Ana Gómez" />
+
+  <label for="procedencia">Lugar de Procedencia</label>
+  <input type="text" id="procedencia" placeholder="Ejemplo: Guadalajara, Jalisco" />
+
+  <label for="entrada">Fecha de Entrada</label>
+  <input type="date" id="entrada" required />
+
+  <label for="salida">Fecha de Salida</label>
+  <input type="date" id="salida" required />
+
+  <label for="personas">Número de Personas</label>
+  <input type="number" id="personas" min="1" required />
+
+  <label for="hospedaje">Nombre del Hospedaje</label>
+  <input type="text" id="hospedaje" placeholder="Ejemplo: Cabaña Familiar" required />
+
+  <label for="costoTotal">Costo Total (MXN)</label>
+  <input type="number" id="costoTotal" min="0" step="0.01" placeholder="Ejemplo: 1500.00" />
+
+  <label for="anticipo">Anticipo (MXN)</label>
+  <input type="number" id="anticipo" min="0" step="0.01" placeholder="Ejemplo: 500.00" />
+
+  <label for="restante">Restante (MXN)</label>
+  <input type="number" id="restante" min="0" step="0.01" placeholder="Ejemplo: 1000.00" />
+
+  <label for="notas">Notas</label>
+  <textarea id="notas" rows="3" placeholder="Notas adicionales o condiciones especiales"></textarea>
+
+  <button type="button" onclick="generarPDF()">Generar Comprobante</button>
+</form>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+function generarNumeroReserva() {
+  let fecha = new Date();
+  return (
+    fecha.getFullYear().toString().slice(-2) +
+    (fecha.getMonth() + 1).toString().padStart(2, "0") +
+    fecha.getDate().toString().padStart(2, "0") +
+    Math.floor(Math.random() * 900 + 100)
+  );
+}
+
+async function generarPDF() {
+  const { jsPDF } = window.jspdf;
+
+  const nombre = document.getElementById("nombre").value.trim();
+  const acompanantes = document.getElementById("acompanantes").value.trim();
+  const procedencia = document.getElementById("procedencia").value.trim();
+  const entrada = document.getElementById("entrada").value;
+  const salida = document.getElementById("salida").value;
+  const personas = document.getElementById("personas").value;
+  const hospedaje = document.getElementById("hospedaje").value.trim();
+
+  const costoTotal = document.getElementById("costoTotal").value.trim();
+  const anticipo = document.getElementById("anticipo").value.trim();
+  const restante = document.getElementById("restante").value.trim();
+  const notas = document.getElementById("notas").value.trim();
+
+  const logoFile = document.getElementById("logoFile").files[0];
+  const numeroReserva = generarNumeroReserva();
+
+  const doc = new jsPDF({
+    unit: "pt",
+    format: "letter",
+  });
+
+  const margin = 40;
+  let y = margin;
+
+  // Encabezado: fondo
+  doc.setDrawColor("#003366");
+  doc.setFillColor("#003366");
+  doc.rect(margin, y, 515, 40, "F");
+
+  // Logo (si hay)
+  if (logoFile) {
+    const imgData = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.readAsDataURL(logoFile);
+    });
+    doc.addImage(imgData, "PNG", margin + 5, y + 2, 60, 36);
+  }
+
+  // Texto encabezado
+  doc.setTextColor("#fff");
+  doc.setFontSize(22);
+  doc.setFont("helvetica", "bold");
+  const textoX = logoFile ? margin + 75 : margin + 20;
+  doc.text("Brumas de Mazamitla", textoX, y + 28);
+
+  y += 60;
+
+  // Título comprobante
+  doc.setTextColor("#003366");
+  doc.setFontSize(18);
+  doc.text("Comprobante de Reserva", margin, y);
+  y += 30;
+
+  // Número de reserva con recuadro más grande
+  const reservaWidth = 200;
+  const reservaHeight = 30;
+  doc.setDrawColor("#003366");
+  doc.setLineWidth(1.5);
+  doc.rect(margin, y, reservaWidth, reservaHeight);
+  doc.setFontSize(14);
+  doc.setTextColor("#003366");
+  doc.text(`No. Reserva: ${numeroReserva}`, margin + 10, y + 20);
+
+  y += reservaHeight + 20;
+
+  // Línea divisoria
+  doc.setDrawColor("#bbbbbb");
+  doc.setLineWidth(0.8);
+  doc.line(margin, y, margin + 515, y);
+  y += 20;
+
+  // Detalles con etiquetas en negrita y datos normales y mayor espacio en "Nombre del Hospedaje"
+  const details = [
+    ["Cliente:", nombre],
+  ];
+
+  if(acompanantes){
+    details.push(["Acompañante(s):", acompanantes]);
+  }
+  if(procedencia){
+    details.push(["Lugar de Procedencia:", procedencia]);
+  }
+
+  details.push(
+    ["Fecha de Entrada:", entrada],
+    ["Fecha de Salida:", salida],
+    ["Número de Personas:", personas]
+  );
+
+  doc.setFontSize(13);
+  doc.setTextColor("#222");
+  details.forEach(([label, value]) => {
+    doc.setFont("helvetica", "bold");
+    doc.text(label, margin, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(value, margin + 140, y);
+    y += 22;
+  });
+
+  // Espacio extra antes del hospedaje para que no se amontone
+  y += 12;
+  doc.setFont("helvetica", "bold");
+  doc.text("Nombre del Hospedaje:", margin, y);
+  doc.setFont("helvetica", "normal");
+  doc.text(hospedaje, margin + 140, y);
+  y += 30;
+
+  // Datos de costo
+  const costos = [];
+
+  if(costoTotal) costos.push(["Costo Total (MXN):", `$ ${parseFloat(costoTotal).toFixed(2)}`]);
+  if(anticipo) costos.push(["Anticipo (MXN):", `$ ${parseFloat(anticipo).toFixed(2)}`]);
+  if(restante) costos.push(["Restante (MXN):", `$ ${parseFloat(restante).toFixed(2)}`]);
+
+  costos.forEach(([label, value]) => {
+    doc.setFont("helvetica", "bold");
+    doc.text(label, margin, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(value, margin + 140, y);
+    y += 22;
+  });
+
+  y += 10;
+
+  // Notas
+  if(notas){
+    doc.setFont("helvetica", "bold");
+    doc.text("Notas:", margin, y);
+    y += 20;
+
+    doc.setFont("helvetica", "normal");
+    const splitNotas = doc.splitTextToSize(notas, 515);
+    doc.text(splitNotas, margin, y);
+    y += splitNotas.length * 16 + 10;
+  }
+
+  doc.setDrawColor("#bbbbbb");
+  doc.line(margin, y, margin + 515, y);
+  y += 40;
+
+  // Espacio para firmas
+  const firmaWidth = 220;
+  const firmaHeight = 50;
+  const firmaY = y;
+  const espacioEntreFirmas = 75;
+
+  doc.setDrawColor("#999999");
+  doc.rect(margin, firmaY, firmaWidth, firmaHeight);
+  doc.setFontSize(12);
+  doc.setTextColor("#444444");
+  doc.text("Firma del Responsable de Reserva", margin + 10, firmaY + firmaHeight + 15);
+
+  doc.rect(margin + firmaWidth + espacioEntreFirmas, firmaY, firmaWidth, firmaHeight);
+  doc.text("Firma del Cliente", margin + firmaWidth + espacioEntreFirmas + 10, firmaY + firmaHeight + 15);
+
+  doc.setFontSize(10);
+  doc.setTextColor("#555");
+  doc.text("Gracias por reservar con Brumas de Mazamitla", margin, firmaY + firmaHeight + 50);
+  doc.text("Contacto: 332-829-0662", margin, firmaY + firmaHeight + 65);
+
+  doc.save(`Reserva_${numeroReserva}.pdf`);
+}
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js").then(
+      () => console.log("Service Worker registrado"),
+      (err) => console.log("Error al registrar SW:", err)
+    );
+  });
+}
+</script>
+
+</body>
+</html>
